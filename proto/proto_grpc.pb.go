@@ -19,103 +19,97 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ChitChatService_Introduce_FullMethodName = "/proto.ChitChatService/Introduce"
+	ChitChat_Join_FullMethodName = "/proto.ChitChat/Join"
 )
 
-// ChitChatServiceClient is the client API for ChitChatService service.
+// ChitChatClient is the client API for ChitChat service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ChitChatServiceClient interface {
-	Introduce(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Empty, error)
+type ChitChatClient interface {
+	Join(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ClientMessage, ServerMessage], error)
 }
 
-type chitChatServiceClient struct {
+type chitChatClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewChitChatServiceClient(cc grpc.ClientConnInterface) ChitChatServiceClient {
-	return &chitChatServiceClient{cc}
+func NewChitChatClient(cc grpc.ClientConnInterface) ChitChatClient {
+	return &chitChatClient{cc}
 }
 
-func (c *chitChatServiceClient) Introduce(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Empty, error) {
+func (c *chitChatClient) Join(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ClientMessage, ServerMessage], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, ChitChatService_Introduce_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ChitChat_ServiceDesc.Streams[0], ChitChat_Join_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[ClientMessage, ServerMessage]{ClientStream: stream}
+	return x, nil
 }
 
-// ChitChatServiceServer is the server API for ChitChatService service.
-// All implementations must embed UnimplementedChitChatServiceServer
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ChitChat_JoinClient = grpc.BidiStreamingClient[ClientMessage, ServerMessage]
+
+// ChitChatServer is the server API for ChitChat service.
+// All implementations must embed UnimplementedChitChatServer
 // for forward compatibility.
-type ChitChatServiceServer interface {
-	Introduce(context.Context, *Message) (*Empty, error)
-	mustEmbedUnimplementedChitChatServiceServer()
+type ChitChatServer interface {
+	Join(grpc.BidiStreamingServer[ClientMessage, ServerMessage]) error
+	mustEmbedUnimplementedChitChatServer()
 }
 
-// UnimplementedChitChatServiceServer must be embedded to have
+// UnimplementedChitChatServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedChitChatServiceServer struct{}
+type UnimplementedChitChatServer struct{}
 
-func (UnimplementedChitChatServiceServer) Introduce(context.Context, *Message) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Introduce not implemented")
+func (UnimplementedChitChatServer) Join(grpc.BidiStreamingServer[ClientMessage, ServerMessage]) error {
+	return status.Errorf(codes.Unimplemented, "method Join not implemented")
 }
-func (UnimplementedChitChatServiceServer) mustEmbedUnimplementedChitChatServiceServer() {}
-func (UnimplementedChitChatServiceServer) testEmbeddedByValue()                         {}
+func (UnimplementedChitChatServer) mustEmbedUnimplementedChitChatServer() {}
+func (UnimplementedChitChatServer) testEmbeddedByValue()                  {}
 
-// UnsafeChitChatServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ChitChatServiceServer will
+// UnsafeChitChatServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ChitChatServer will
 // result in compilation errors.
-type UnsafeChitChatServiceServer interface {
-	mustEmbedUnimplementedChitChatServiceServer()
+type UnsafeChitChatServer interface {
+	mustEmbedUnimplementedChitChatServer()
 }
 
-func RegisterChitChatServiceServer(s grpc.ServiceRegistrar, srv ChitChatServiceServer) {
-	// If the following call pancis, it indicates UnimplementedChitChatServiceServer was
+func RegisterChitChatServer(s grpc.ServiceRegistrar, srv ChitChatServer) {
+	// If the following call pancis, it indicates UnimplementedChitChatServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&ChitChatService_ServiceDesc, srv)
+	s.RegisterService(&ChitChat_ServiceDesc, srv)
 }
 
-func _ChitChatService_Introduce_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Message)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChitChatServiceServer).Introduce(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ChitChatService_Introduce_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChitChatServiceServer).Introduce(ctx, req.(*Message))
-	}
-	return interceptor(ctx, in, info, handler)
+func _ChitChat_Join_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ChitChatServer).Join(&grpc.GenericServerStream[ClientMessage, ServerMessage]{ServerStream: stream})
 }
 
-// ChitChatService_ServiceDesc is the grpc.ServiceDesc for ChitChatService service.
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ChitChat_JoinServer = grpc.BidiStreamingServer[ClientMessage, ServerMessage]
+
+// ChitChat_ServiceDesc is the grpc.ServiceDesc for ChitChat service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ChitChatService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.ChitChatService",
-	HandlerType: (*ChitChatServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
+var ChitChat_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.ChitChat",
+	HandlerType: (*ChitChatServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "Introduce",
-			Handler:    _ChitChatService_Introduce_Handler,
+			StreamName:    "Join",
+			Handler:       _ChitChat_Join_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto.proto",
 }

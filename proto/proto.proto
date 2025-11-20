@@ -4,12 +4,18 @@ option go_package = "ChitChatTake2/proto/proto";
 
 package proto;
 
-message Message {
-    int32 id = 1;
+message ClientMessage {
+    string message = 1;
+    int32 lamport = 2;
+}
+
+message ServerMessage {
+    string message = 1;
+    int32 lamport = 2;
 }
 
 message Empty {}
 
-service ChitChatService {
-    rpc Introduce(Message) returns (Empty);
+service ChitChat {
+    rpc Join(stream ClientMessage) returns (stream ServerMessage);
 }
