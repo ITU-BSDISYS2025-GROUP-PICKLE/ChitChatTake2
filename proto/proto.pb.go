@@ -75,8 +75,9 @@ func (x *ClientMessage) GetLamport() int32 {
 
 type ServerMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	Lamport       int32                  `protobuf:"varint,2,opt,name=lamport,proto3" json:"lamport,omitempty"`
+	ClientId      int32                  `protobuf:"varint,1,opt,name=clientId,proto3" json:"clientId,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Lamport       int32                  `protobuf:"varint,3,opt,name=lamport,proto3" json:"lamport,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -109,6 +110,13 @@ func (x *ServerMessage) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ServerMessage.ProtoReflect.Descriptor instead.
 func (*ServerMessage) Descriptor() ([]byte, []int) {
 	return file_proto_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ServerMessage) GetClientId() int32 {
+	if x != nil {
+		return x.ClientId
+	}
+	return 0
 }
 
 func (x *ServerMessage) GetMessage() string {
@@ -168,10 +176,11 @@ const file_proto_proto_rawDesc = "" +
 	"\vproto.proto\x12\x05proto\"C\n" +
 	"\rClientMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
-	"\alamport\x18\x02 \x01(\x05R\alamport\"C\n" +
-	"\rServerMessage\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
-	"\alamport\x18\x02 \x01(\x05R\alamport\"\a\n" +
+	"\alamport\x18\x02 \x01(\x05R\alamport\"_\n" +
+	"\rServerMessage\x12\x1a\n" +
+	"\bclientId\x18\x01 \x01(\x05R\bclientId\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x18\n" +
+	"\alamport\x18\x03 \x01(\x05R\alamport\"\a\n" +
 	"\x05Empty2B\n" +
 	"\bChitChat\x126\n" +
 	"\x04Join\x12\x14.proto.ClientMessage\x1a\x14.proto.ServerMessage(\x010\x01B\x1bZ\x19ChitChatTake2/proto/protob\x06proto3"

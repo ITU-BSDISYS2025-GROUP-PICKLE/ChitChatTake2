@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -18,7 +17,7 @@ type Server struct {
 	mu            sync.Mutex
 	address       string
 	clientStreams []pb.ChitChat_JoinServer
-	lamportTime   int
+	lamportTime   int32
 }
 
 func (s *Server) StartServer() {
@@ -48,14 +47,17 @@ func (s *Server) Join(clientStream pb.ChitChat_JoinServer) error {
 	// Register new client
 	s.lamportTime++
 	s.clientStreams = append(s.clientStreams, clientStream)
-	clientId := len(s.clientStreams)
+	clientId := int32(len(s.clientStreams))
 
 	s.mu.Unlock()
 
 	// Send join message
-	connectMsg := fmt.Sprintf("Participant #%d joined the ChitChat at logical time %d.", clientId, s.lamportTime)
-	log.Println(connectMsg)
-	s.SendToClients(connectMsg)
+	log.Printf("Participant #%d joined the ChitChat at logical time %d.", clientId, s.lamportTime)
+	s.SendToClients(&pb.ServerMessage{
+		ClientId: clientId,
+		Message:  "Participant joined the ChitChat.",
+		Lamport:  s.lamportTime,
+	})
 
 	// Listen to the client while it remains alive
 	s.ListenToClient(clientStream, clientId)
@@ -64,34 +66,47 @@ func (s *Server) Join(clientStream pb.ChitChat_JoinServer) error {
 }
 
 // Continually receive messages from a given client
-func (s *Server) ListenToClient(clientStream pb.ChitChat_JoinServer, clientId int) error {
+func (s *Server) ListenToClient(clientStream pb.ChitChat_JoinServer, clientId int32) error {
 	for {
 		// Wait to receive message from client
 		in, err := clientStream.Recv()
-		s.IncrementLamportTimestamp()
 
-		// If there's an error it's because the client has disconnected (fx. with Ctrl+C)
+		// Increment Lamport timestamp to whichever is higher of the server's / client's
+		s.mu.Lock()
+		s.lamportTime = max(s.lamportTime, in.GetLamport()) + 1
+		s.mu.Unlock()
+
+		// If there's an error it's because the client has disconnected
 		if err != nil {
 			s.DisconnectClient(clientStream, clientId)
 			return err
 		}
 
 		// Print and send the client's message
-		message := fmt.Sprintf("Client #%d [T:%d]> %s", clientId, s.lamportTime, in.Message)
-		log.Println(message)
-		s.SendToClients(message)
+		log.Printf("Client #%d [T=%d]> %s", clientId, s.lamportTime, in.GetMessage())
+		s.SendToClients(&pb.ServerMessage{
+			ClientId: clientId,
+			Message:  in.GetMessage(),
+			Lamport:  s.lamportTime,
+		})
 	}
 }
 
 // Disconnect a given client from the server
-func (s *Server) DisconnectClient(clientStream pb.ChitChat_JoinServer, clientId int) {
-	// Send leave message
-	disconnectMsg := fmt.Sprintf("Participant #%d disconnected at logical time %d.", clientId, s.lamportTime)
-	log.Println(disconnectMsg)
-	s.SendToClients(disconnectMsg)
+func (s *Server) DisconnectClient(clientStream pb.ChitChat_JoinServer, clientId int32) {
+	// Send leave message (to the server and clients)
+	log.Printf("Participant #%d disconnected at logical time %d.", clientId, s.lamportTime)
+	s.SendToClients(&pb.ServerMessage{
+		ClientId: clientId,
+		Message:  "Participant left the ChitChat.",
+		Lamport:  s.lamportTime,
+	})
 
-	// Remove client from slice of clients
+	// Remove client from slice of clients and increase Lamport timestamp
+	s.mu.Lock()
 	s.clientStreams = RemoveClientFromClientsSlice(s.clientStreams, clientStream)
+	s.lamportTime++
+	s.mu.Unlock()
 
 	// Shut down server if zero clients are left
 	if len(s.clientStreams) == 0 {
@@ -101,18 +116,16 @@ func (s *Server) DisconnectClient(clientStream pb.ChitChat_JoinServer, clientId 
 }
 
 // Send a message to all clients listening to the server
-func (s *Server) SendToClients(message string) {
-	serverMsg := &pb.ServerMessage{
-		Message: message,
-	}
+func (s *Server) SendToClients(serverMsg *pb.ServerMessage) {
+	//serverMsg := &pb.ServerMessage{
+	//	Message: message,
+	//	Lamport: s.lamportTime,
+	//}
 
 	for _, c := range s.clientStreams {
 		c.Send(serverMsg)
 	}
-}
 
-// Increment the server's lamport timestamp
-func (s *Server) IncrementLamportTimestamp() {
 	s.mu.Lock()
 	s.lamportTime++
 	s.mu.Unlock()

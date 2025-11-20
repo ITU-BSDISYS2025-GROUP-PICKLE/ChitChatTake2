@@ -3,9 +3,11 @@ package main
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -15,6 +17,7 @@ import (
 )
 
 var (
+	mu          sync.Mutex
 	lamportTime int32 = 0
 )
 
@@ -38,10 +41,13 @@ func ListenToServer(serverStream grpc.BidiStreamingClient[pb.ClientMessage, pb.S
 			return
 		}
 
-		lamportTime = max(lamportTime+1, in.Lamport+1)
+		// Whenever a message is received, Lamport is increased
+		mu.Lock()
+		lamportTime = max(lamportTime+1, in.GetLamport()+1)
+		mu.Unlock()
 
 		// Print received messages
-		println(in.Message)
+		fmt.Printf("Client #%d [T=%d]> %s\n", in.GetClientId(), lamportTime, in.GetMessage())
 	}
 }
 
@@ -71,6 +77,11 @@ func SendToServer(serverStream grpc.BidiStreamingClient[pb.ClientMessage, pb.Ser
 	if err := serverStream.Send(&pb.ClientMessage{Message: message, Lamport: lamportTime}); err != nil {
 		log.Fatalf("serverStream.Send() failed: %v", err)
 	}
+
+	// Whenever a message is sent, Lamport is increased
+	mu.Lock()
+	lamportTime++
+	mu.Unlock()
 }
 
 func main() {
