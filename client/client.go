@@ -89,6 +89,10 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		message := ReadInput(scanner)
+		time.Sleep(100 * time.Millisecond)
+		// ^^Fixes an annoying behaviour where Client terminal prints
+		// 4x "Error: Message cannot be empty" if Ctrl+C is used to disconnect
+
 		if strings.Trim(message, " ") == "" {
 			println("Error: Message cannot be empty")
 			continue
