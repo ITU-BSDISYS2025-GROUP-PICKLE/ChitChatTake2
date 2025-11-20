@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -20,6 +22,7 @@ type Server struct {
 	lamportTime   int32
 }
 
+// Starts a ChitChat server
 func (s *Server) StartServer() {
 	// Create listener
 	lis, err := net.Listen("tcp", s.address)
@@ -33,6 +36,7 @@ func (s *Server) StartServer() {
 
 	// Log for transparency
 	log.Printf("ChitChat Server now listening on %s", s.address)
+	fmt.Printf("ChitChat Server now listening on %s\n", s.address)
 
 	// Serve
 	if err := server.Serve(lis); err != nil {
@@ -53,6 +57,7 @@ func (s *Server) Join(clientStream pb.ChitChat_JoinServer) error {
 
 	// Send join message
 	log.Printf("Participant #%d joined the ChitChat at logical time %d.", clientId, s.lamportTime)
+	fmt.Printf("Participant #%d joined the ChitChat at logical time %d.\n", clientId, s.lamportTime)
 	s.SendToClients(&pb.ServerMessage{
 		ClientId: clientId,
 		Message:  "Participant joined the ChitChat.",
@@ -84,6 +89,7 @@ func (s *Server) ListenToClient(clientStream pb.ChitChat_JoinServer, clientId in
 
 		// Print and send the client's message
 		log.Printf("Client #%d [T=%d]> %s", clientId, s.lamportTime, in.GetMessage())
+		fmt.Printf("Client #%d [T=%d]> %s\n", clientId, s.lamportTime, in.GetMessage())
 		s.SendToClients(&pb.ServerMessage{
 			ClientId: clientId,
 			Message:  in.GetMessage(),
@@ -96,6 +102,7 @@ func (s *Server) ListenToClient(clientStream pb.ChitChat_JoinServer, clientId in
 func (s *Server) DisconnectClient(clientStream pb.ChitChat_JoinServer, clientId int32) {
 	// Send leave message (to the server and clients)
 	log.Printf("Participant #%d disconnected at logical time %d.", clientId, s.lamportTime)
+	fmt.Printf("Participant #%d disconnected at logical time %d.\n", clientId, s.lamportTime)
 	s.SendToClients(&pb.ServerMessage{
 		ClientId: clientId,
 		Message:  "Participant left the ChitChat.",
@@ -111,6 +118,7 @@ func (s *Server) DisconnectClient(clientStream pb.ChitChat_JoinServer, clientId 
 	// Shut down server if zero clients are left
 	if len(s.clientStreams) == 0 {
 		log.Println("No clients left: server shutting down...")
+		fmt.Println("No clients left: server shutting down...")
 		os.Exit(0)
 	}
 }
@@ -144,12 +152,35 @@ func RemoveClientFromClientsSlice(
 	return clientsSlice
 }
 
+// Creates a log file named after the current time
+func CreateLogFile() string {
+	year := fmt.Sprint(time.Now().Year())
+	month := fmt.Sprint(int(time.Now().Month()))
+	day := fmt.Sprint(time.Now().Day())
+	hour := fmt.Sprint(time.Now().Hour())
+	minute := fmt.Sprint(time.Now().Minute())
+	second := fmt.Sprint(time.Now().Second())
+
+	return "server/logs/log-" + year + month + day + "-" + hour + minute + second + ".txt"
+}
+
 func main() {
 	s := &Server{
 		address:       "localhost:50051",
 		clientStreams: []pb.ChitChat_JoinServer{},
 		lamportTime:   0,
 	}
+
+	// Create log file
+	fileName := CreateLogFile()
+
+	logFile, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logFile.Close()
+
+	log.SetOutput(logFile)
 
 	s.StartServer()
 }

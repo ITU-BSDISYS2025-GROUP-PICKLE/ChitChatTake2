@@ -1,0 +1,17 @@
+2025/11/20 17:20:22 ChitChat Server now listening on localhost:50051
+2025/11/20 17:20:30 Participant #1 joined the ChitChat at logical time 1.
+2025/11/20 17:20:33 Client #1 [T=3]> Hello!
+2025/11/20 17:20:40 Client #1 [T=5]> Oh, no one's here...
+2025/11/20 17:20:43 Participant #2 joined the ChitChat at logical time 7.
+2025/11/20 17:20:46 Client #2 [T=9]> Hi!
+2025/11/20 17:20:50 Client #1 [T=11]> Hello there!
+2025/11/20 17:20:54 Participant #3 joined the ChitChat at logical time 13.
+2025/11/20 17:21:01 Client #3 [T=15]> General Kenobi...
+2025/11/20 17:21:10 Client #2 [T=17]> Nice reference
+2025/11/20 17:21:14 Client #3 [T=19]> thanks
+2025/11/20 17:21:25 Client #2 [T=21]> Anyway I gtg, bye!
+2025/11/20 17:21:32 Client #3 [T=23]> See you
+2025/11/20 17:21:40 Participant #2 disconnected at logical time 25.
+2025/11/20 17:21:44 Participant #3 disconnected at logical time 28.
+2025/11/20 17:21:52 Participant #1 disconnected at logical time 31.
+2025/11/20 17:21:52 No clients left: server shutting down...

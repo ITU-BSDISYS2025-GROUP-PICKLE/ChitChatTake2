@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -47,7 +46,7 @@ func ListenToServer(serverStream grpc.BidiStreamingClient[pb.ClientMessage, pb.S
 		mu.Unlock()
 
 		// Print received messages
-		fmt.Printf("Client #%d [T=%d]> %s\n", in.GetClientId(), lamportTime, in.GetMessage())
+		log.Printf("Client #%d [T=%d]> %s\n", in.GetClientId(), lamportTime, in.GetMessage())
 	}
 }
 
