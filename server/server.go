@@ -61,6 +61,7 @@ func (s *Server) Join(clientStream pb.ChitChat_JoinServer) error {
 	return nil
 }
 
+// Continually receive messages from a given client
 func ListenToClient(clientStream pb.ChitChat_JoinServer, clientId int, s *Server) error {
 	for {
 		// Wait to receive message from client
@@ -79,6 +80,7 @@ func ListenToClient(clientStream pb.ChitChat_JoinServer, clientId int, s *Server
 	}
 }
 
+// Disconnect a given client from the server
 func DisconnectClient(clientStream pb.ChitChat_JoinServer, clientId int, s *Server) {
 	// Send leave message
 	disconnectMsg := fmt.Sprintf("Participant #%d disconnected.", clientId)

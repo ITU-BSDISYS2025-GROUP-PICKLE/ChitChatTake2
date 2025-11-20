@@ -14,6 +14,7 @@ import (
 	pb "module/proto"
 )
 
+// Dial the server, create a client
 func CreateClient() pb.ChitChatClient {
 	// Create connection
 	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -25,6 +26,7 @@ func CreateClient() pb.ChitChatClient {
 	return pb.NewChitChatClient(conn)
 }
 
+// Continually receive messages from the server
 func ListenToServer(serverStream grpc.BidiStreamingClient[pb.ClientMessage, pb.ServerMessage]) {
 	for {
 		in, err := serverStream.Recv()
@@ -38,6 +40,7 @@ func ListenToServer(serverStream grpc.BidiStreamingClient[pb.ClientMessage, pb.S
 	}
 }
 
+// Read user input. Considers message-length and includes exit-words.
 func ReadInput(scanner *bufio.Scanner) string {
 	scanner.Scan()
 	input := scanner.Text()
@@ -58,6 +61,7 @@ func ReadInput(scanner *bufio.Scanner) string {
 	return input
 }
 
+// Send a message to the server
 func SendToServer(serverStream grpc.BidiStreamingClient[pb.ClientMessage, pb.ServerMessage], message string) {
 	if err := serverStream.Send(&pb.ClientMessage{Message: message}); err != nil {
 		log.Fatalf("serverStream.Send() failed: %v", err)
