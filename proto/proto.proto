@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "ChitChatTake2/proto/proto";
+
+package proto;
+
+message Message {
+    int32 id = 1;
+}
+
+message Empty {}
+
+service ChitChatService {
+    rpc Introduce(Message) returns (Empty);
+}
