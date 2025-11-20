@@ -46,13 +46,14 @@ func (s *Server) Join(clientStream pb.ChitChat_JoinServer) error {
 	s.mu.Lock()
 
 	// Register new client
+	s.lamportTime++
 	s.clientStreams = append(s.clientStreams, clientStream)
 	clientId := len(s.clientStreams)
 
 	s.mu.Unlock()
 
 	// Send join message
-	connectMsg := fmt.Sprintf("Participant #%d joined the ChitChat.", clientId)
+	connectMsg := fmt.Sprintf("Participant #%d joined the ChitChat at logical time %d.", clientId, s.lamportTime)
 	log.Println(connectMsg)
 	s.SendToClients(connectMsg)
 
@@ -76,7 +77,7 @@ func (s *Server) ListenToClient(clientStream pb.ChitChat_JoinServer, clientId in
 		}
 
 		// Print and send the client's message
-		message := fmt.Sprintf("Client #%d [local logical time: %d]> %s", clientId, in.Lamport, in.Message)
+		message := fmt.Sprintf("Client #%d [T:%d]> %s", clientId, s.lamportTime, in.Message)
 		log.Println(message)
 		s.SendToClients(message)
 	}
@@ -85,7 +86,7 @@ func (s *Server) ListenToClient(clientStream pb.ChitChat_JoinServer, clientId in
 // Disconnect a given client from the server
 func (s *Server) DisconnectClient(clientStream pb.ChitChat_JoinServer, clientId int) {
 	// Send leave message
-	disconnectMsg := fmt.Sprintf("Participant #%d disconnected.", clientId)
+	disconnectMsg := fmt.Sprintf("Participant #%d disconnected at logical time %d.", clientId, s.lamportTime)
 	log.Println(disconnectMsg)
 	s.SendToClients(disconnectMsg)
 
@@ -94,7 +95,7 @@ func (s *Server) DisconnectClient(clientStream pb.ChitChat_JoinServer, clientId 
 
 	// Shut down server if zero clients are left
 	if len(s.clientStreams) == 0 {
-		log.Println("No clients left: shutting down server...")
+		log.Println("No clients left: server shutting down...")
 		os.Exit(0)
 	}
 }

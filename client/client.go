@@ -14,6 +14,10 @@ import (
 	pb "module/proto"
 )
 
+var (
+	lamportTime int32 = 0
+)
+
 // Dial the server, create a client
 func CreateClient() pb.ChitChatClient {
 	// Create connection
@@ -31,9 +35,10 @@ func ListenToServer(serverStream grpc.BidiStreamingClient[pb.ClientMessage, pb.S
 	for {
 		in, err := serverStream.Recv()
 		if err != nil {
-			println("Mi bombo")
 			return
 		}
+
+		lamportTime = max(lamportTime+1, in.Lamport+1)
 
 		// Print received messages
 		println(in.Message)
@@ -63,7 +68,7 @@ func ReadInput(scanner *bufio.Scanner) string {
 
 // Send a message to the server
 func SendToServer(serverStream grpc.BidiStreamingClient[pb.ClientMessage, pb.ServerMessage], message string) {
-	if err := serverStream.Send(&pb.ClientMessage{Message: message}); err != nil {
+	if err := serverStream.Send(&pb.ClientMessage{Message: message, Lamport: lamportTime}); err != nil {
 		log.Fatalf("serverStream.Send() failed: %v", err)
 	}
 }
